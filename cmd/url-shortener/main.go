@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"os"
 	"url-shortener/internal/config"
+	"url-shortener/internal/lib/logger/sl"
+	"url-shortener/internal/storage/sqlite"
 )
 
 const (
@@ -20,7 +22,19 @@ func main() {
 	logger.Info("Starting url-shortener", slog.String("env", config.Env))
 	logger.Debug("Debug messages are enable")
 
-	// TODO: init storage: sqlite
+	storage, err := sqlite.New(config.StoragePath)
+	if err != nil {
+		logger.Error("Failed to init storage", sl.Err(err))
+		os.Exit(1)
+	}
+
+	id, err := storage.SaveURL("https://google.com", "google")
+	if err != nil {
+		logger.Error("Failed to save url", sl.Err(err))
+		os.Exit(1)
+	}
+
+	logger.Info("Saved url", slog.Int64("id", id))
 
 	// TODO: init router: chi, "chi/render"
 

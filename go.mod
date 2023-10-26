@@ -2,7 +2,10 @@ module url-shortener
 
 go 1.21.3
 
-require github.com/ilyakaznacheev/cleanenv v1.5.0
+require (
+	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/mattn/go-sqlite3 v1.14.17
+)
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
