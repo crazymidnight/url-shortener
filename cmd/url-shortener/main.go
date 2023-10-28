@@ -4,8 +4,12 @@ import (
 	"log/slog"
 	"os"
 	"url-shortener/internal/config"
+	mwLogger "url-shortener/internal/http-server/middleware/logger"
 	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -27,33 +31,13 @@ func main() {
 		logger.Error("Failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
+	_ = storage
+	router := chi.NewRouter()
 
-	err = storage.DeleteURL("google")
-	if err != nil {
-		logger.Error("Failed to delete url", sl.Err(err))
-		os.Exit(1)
-	}
-
-	id, err := storage.SaveURL("https://google.com", "google")
-	if err != nil {
-		logger.Error("Failed to save url", sl.Err(err))
-		os.Exit(1)
-	}
-
-	logger.Info("Saved url", slog.Int64("id", id))
-	url, err := storage.GetURL("google")
-	if err != nil {
-		logger.Error("Failed to get url", sl.Err(err))
-		os.Exit(1)
-	}
-
-	logger.Info("Get url", slog.String("url", url))
-	err = storage.DeleteURL("googl")
-	if err != nil {
-		logger.Error("Failed to delete url", sl.Err(err))
-		os.Exit(1)
-	}
-	// TODO: init router: chi, "chi/render"
+	router.Use(middleware.RequestID)
+	router.Use(mwLogger.New(logger))
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
 
 	// TODO: run server
 }
