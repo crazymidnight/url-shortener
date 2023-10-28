@@ -28,6 +28,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = storage.DeleteURL("google")
+	if err != nil {
+		logger.Error("Failed to delete url", sl.Err(err))
+		os.Exit(1)
+	}
+
 	id, err := storage.SaveURL("https://google.com", "google")
 	if err != nil {
 		logger.Error("Failed to save url", sl.Err(err))
@@ -35,7 +41,18 @@ func main() {
 	}
 
 	logger.Info("Saved url", slog.Int64("id", id))
+	url, err := storage.GetURL("google")
+	if err != nil {
+		logger.Error("Failed to get url", sl.Err(err))
+		os.Exit(1)
+	}
 
+	logger.Info("Get url", slog.String("url", url))
+	err = storage.DeleteURL("googl")
+	if err != nil {
+		logger.Error("Failed to delete url", sl.Err(err))
+		os.Exit(1)
+	}
 	// TODO: init router: chi, "chi/render"
 
 	// TODO: run server
