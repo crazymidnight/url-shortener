@@ -27,7 +27,7 @@ type Response struct {
 const aliasLength = 6
 
 type URLSaver interface {
-	Save(url string, alias string) (int64, error)
+	SaveURL(url string, alias string) (int64, error)
 }
 
 func New(logger *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
@@ -67,7 +67,7 @@ func New(logger *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 			alias = random.NewRandomString(aliasLength)
 		}
 
-		id, err := urlSaver.Save(req.URL, alias)
+		id, err := urlSaver.SaveURL(req.URL, alias)
 		if errors.Is(err, storage.ErrUrlExists) {
 			logger.Info("URL already exists", slog.String("url", req.URL))
 

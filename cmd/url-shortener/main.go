@@ -2,8 +2,10 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 	"url-shortener/internal/config"
+	"url-shortener/internal/http-server/handlers/url/save"
 	mwLogger "url-shortener/internal/http-server/middleware/logger"
 	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
@@ -31,7 +33,7 @@ func main() {
 		logger.Error("Failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
-	_ = storage
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -39,7 +41,21 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	// TODO: run server
+	router.Post("/url", save.New(logger, storage))
+
+	logger.Info("Starting server", slog.String("address", config.Address))
+
+	server := &http.Server{
+		Addr:         config.Address,
+		Handler:      router,
+		ReadTimeout:  config.HTTPServer.Timeout,
+		WriteTimeout: config.HTTPServer.Timeout,
+		IdleTimeout:  config.HTTPServer.IdleTimeout,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
+		logger.Error("Failed to start server")
+	}
 }
 
 func setupLogger(env string) *slog.Logger {
