@@ -1,4 +1,4 @@
-package delete_url
+package delete
 
 import (
 	"log/slog"
@@ -6,14 +6,10 @@ import (
 	"url-shortener/internal/lib/api/response"
 	"url-shortener/internal/lib/logger/sl"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 )
-
-type Request struct {
-	Alias string `json:"alias,omitempty"`
-}
 
 //go:generate go run github.com/vektra/mockery/v2@v2.36.1 --name=URLSaver
 type URLDeleter interface {
@@ -29,37 +25,15 @@ func New(logger *slog.Logger, urlDeleter URLDeleter) http.HandlerFunc {
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		var req Request
+		alias := chi.URLParam(r, "alias")
 
-		err := render.DecodeJSON(r.Body, &req)
-		if err != nil {
-			logger.Error("Failed to decode request body", sl.Err(err))
-
-			render.JSON(w, r, response.Error("Failed to decode request"))
-
-			return
-		}
-
-		logger.Info("Request body decoded", slog.Any("request", req))
-
-		if err := validator.New().Struct(req); err != nil {
-			validateError := err.(validator.ValidationErrors)
-
-			logger.Error("Invalid request", sl.Err(err))
-
-			render.JSON(w, r, response.ValidationError(validateError))
-
-			return
-		}
-
-		alias := req.Alias
 		if alias == "" {
 			logger.Error("Alias is empty")
 
 			render.JSON(w, r, response.Error("Invalid request"))
 		}
 
-		err = urlDeleter.DeleteURL(alias)
+		err := urlDeleter.DeleteURL(alias)
 
 		if err != nil {
 			logger.Error("Error while URL deleting", sl.Err(err))
